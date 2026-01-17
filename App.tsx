@@ -10,12 +10,14 @@ import EditorEnergia from './components/editors/EditorEnergia';
 import EditorLocalizacao from './components/editors/EditorLocalizacao';
 import EditorMURES from './components/editors/EditorMURES';
 import EditorFotos from './components/editors/EditorFotos';
+import EditorPlantas from './components/editors/EditorPlantas';
 import EditorPerfis from './components/editors/EditorPerfis';
 import EditorPerfisSistemas from './components/editors/EditorPerfisSistemas';
 import EditorOcupacao from './components/editors/EditorOcupacao';
 import EditorEspacos from './components/editors/EditorEspacos';
 import EditorStructured from './components/editors/EditorStructured';
 import PrintView from './components/PrintView';
+import LandingPage from './components/LandingPage';
 import { Pencil, FileText, Code, FileDown, Copy, Printer, CheckCircle } from 'lucide-react';
 
 const emptyProfile = (): HourlyProfile => ({ daily: Array(24).fill(1), weekly: Array(7).fill(1) });
@@ -35,13 +37,16 @@ const INITIAL_STATE: ReportState = {
     trmNome: '', trmNumero: '', tgeNome: '', tgeNumero: '', empresaNome: '', empresaAlvara: '',
     temPMP: false, temLivroOcorrencias: false,
     telasFinais: { arquitetura: false, avac: false, eletricidade: false, aguasEsgotos: false, outros: false, outrosSpec: '' },
-    periodicidade: 'Mensal', notasManutencao: ''
+    periodicidade: 'Mensal', notasManutencao: '',
+    photoIdsPmp: [], photoIdsFolhaIntervencao: []
   },
   energy: {
     fontes: [],
+    fontesInfo: [],
     temPT: false,
     ptCodigo: '',
     ptPotencia: '',
+    ptPhotoIds: [],
     cpeEletricidade: '',
     temContadoresEnergia: false,
     temContadoresAgua: false,
@@ -64,13 +69,14 @@ const INITIAL_STATE: ReportState = {
   distribuicaoList: [], difusaoList: [], iluminacaoList: [], elevadoresList: [], 
   cozinhasList: [], lavandariaList: [], piscinaList: [], outrosSistemasList: [],
   photos: [],
+  floorPlans: [],
   mures: INITIAL_MURES,
   currentSection: SectionType.CAPA,
 };
 
 const App: React.FC = () => {
   const [report, setReport] = useState<ReportState>(INITIAL_STATE);
-  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [viewMode, setViewMode] = useState<'welcome' | 'edit' | 'preview'>('welcome');
   const printRef = useRef<HTMLDivElement>(null);
 
   const updateReport = useCallback((updates: Partial<ReportState>) => setReport(prev => ({ ...prev, ...updates })), []);
@@ -98,6 +104,8 @@ const App: React.FC = () => {
       const parsed = JSON.parse(data);
       if (parsed.building && parsed.profiles) {
         setReport(parsed);
+        // Se abrir um arquivo, vai direto para edição
+        setViewMode('edit');
       } else {
         alert('O ficheiro selecionado não parece ser um relatório válido do SCE PRO.');
       }
@@ -168,6 +176,7 @@ const App: React.FC = () => {
       case SectionType.MANUTENCAO: return <EditorManutencao report={report} onUpdate={updateReport} />;
       case SectionType.ENERGIA: return <EditorEnergia report={report} onUpdate={updateReport} />;
       case SectionType.FOTOS: return <EditorFotos report={report} onUpdate={updateReport} />;
+      case SectionType.PLANTAS: return <EditorPlantas report={report} onUpdate={updateReport} />;
       case SectionType.PERFIS: return (
         <div className="space-y-6">
           <EditorPerfis 
@@ -208,6 +217,10 @@ const App: React.FC = () => {
       default: return <div className="p-10 text-center text-gray-400">Página em desenvolvimento...</div>;
     }
   };
+
+  if (viewMode === 'welcome') {
+    return <LandingPage onStart={() => setViewMode('edit')} />;
+  }
 
   if (viewMode === 'preview') {
     return (

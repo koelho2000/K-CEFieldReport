@@ -2,6 +2,7 @@
 export enum SectionType {
   CAPA = 'Capa',
   FOTOS = 'Fotos',
+  PLANTAS = 'Plantas Gerais',
   LOCALIZACAO = 'Localização',
   DADOS_EDIFICIO = 'Dados do Edifício',
   MANUTENCAO = 'Manutenção e Operação',
@@ -32,6 +33,14 @@ export interface PhotoEntry {
   category: string;
   includeInReport: boolean;
   estimatedCost?: string;
+}
+
+export interface FloorPlanEntry {
+  id: string;
+  name: string;
+  url: string;
+  caption: string;
+  type: 'image' | 'pdf';
 }
 
 export interface TechnicalElement {
@@ -77,11 +86,19 @@ export interface MureItem {
   photoIds?: string[];
 }
 
+export interface EnergySourceInfo {
+  source: string;
+  meterRef?: string;
+  photoIds?: string[];
+}
+
 export interface EnergyInfrastructure {
   fontes: string[];
+  fontesInfo: EnergySourceInfo[];
   temPT: boolean;
   ptCodigo: string;
   ptPotencia: string;
+  ptPhotoIds?: string[];
   cpeEletricidade: string;
   temContadoresEnergia: boolean;
   temContadoresAgua: boolean;
@@ -109,6 +126,8 @@ export interface MaintenanceData {
   };
   periodicidade: string;
   notasManutencao: string;
+  photoIdsPmp?: string[];
+  photoIdsFolhaIntervencao?: string[];
 }
 
 export interface ReportState {
@@ -176,6 +195,7 @@ export interface ReportState {
   piscinaList: TechnicalElement[];
   outrosSistemasList: TechnicalElement[];
   photos: PhotoEntry[];
+  floorPlans: FloorPlanEntry[];
   mures: MureItem[];
   currentSection: SectionType;
 }

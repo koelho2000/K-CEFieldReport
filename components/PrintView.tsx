@@ -56,6 +56,13 @@ const ChapterPage: React.FC<{
   </div>
 );
 
+const DataRow: React.FC<{ label: string; value: string | undefined; highlight?: boolean }> = ({ label, value, highlight }) => (
+  <div className="flex justify-between border-b border-slate-100 py-1.5 text-[10px]">
+    <span className="text-slate-400 font-bold uppercase shrink-0 mr-4">{label}:</span>
+    <span className={`text-right font-black ${highlight ? 'text-blue-700' : 'text-slate-800'}`}>{value || '---'}</span>
+  </div>
+);
+
 const ProfileAnalysisBlock: React.FC<{ 
   title: string; 
   activeHours: number; 
@@ -151,11 +158,11 @@ const TechnicalTable: React.FC<{
 );
 
 const PrintView: React.FC<Props> = ({ report }) => {
-  const { building, location, maintenance, energy, profiles, photos, mures } = report;
+  const { building, location, maintenance, energy, profiles, photos, floorPlans, mures } = report;
 
-  // Definição dos capítulos ativos
   const activeChapters = [
     { id: 'identificacao', title: "Identificação e Enquadramento Legal", active: true },
+    { id: 'plantas', title: "Plantas Gerais do Edifício", active: (floorPlans || []).length > 0 },
     { id: 'manutencao', title: "Manutenção e Operação do Edifício", active: maintenance.empresaNome || maintenance.trmNome },
     { id: 'energia', title: "Infraestrutura de Energia e Monitorização", active: energy.fontes.length > 0 || energy.temPT },
     { id: 'perfis', title: "Perfis de Funcionamento e Ocupação", active: true },
@@ -177,13 +184,11 @@ const PrintView: React.FC<Props> = ({ report }) => {
   const formattedAuditDate = new Date(report.auditDate).toLocaleDateString('pt-PT');
   const buildingNameShort = building.nomeEdificio || 'Edifício sem nome';
 
-  // Cálculos Estatísticos para Perfis
   const dailyFactor = profiles.ocupacao.daily.reduce((a, b) => a + b, 0) / 24;
   const weeklyFactor = profiles.ocupacao.weekly.reduce((a, b) => a + b, 0) / 7;
   const monthlyFactor = profiles.ocupacao.monthly.reduce((a, b) => a + b, 0) / 12;
   const annualFactor = dailyFactor * weeklyFactor * monthlyFactor * 100;
 
-  // Análises Descritivas Dinâmicas
   const getDailyAnalysis = (p: number[]) => {
     const hours = p.filter(v => v === 1).length;
     if (hours > 12) return "Perfil de funcionamento intensivo, com operação alargada além do horário comercial padrão, indicando elevada carga térmica latente.";
@@ -257,7 +262,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </div>
       </div>
 
-      {/* Identificação */}
+      {/* Identificação e Enquadramento Legal */}
       <ChapterPage 
         chapterNumber={getChapterNumber('identificacao')} 
         title="Identificação e Enquadramento Legal" 
@@ -265,56 +270,98 @@ const PrintView: React.FC<Props> = ({ report }) => {
         buildingName={buildingNameShort}
         auditDate={formattedAuditDate}
       >
-        <div className="grid grid-cols-2 gap-8">
-          <section className="space-y-4">
-            <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Dados Administrativos</h3>
-            <div className="space-y-2 text-[10px]">
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Utilização:</span>
-                <span className="font-black text-slate-800">{building.utilizacao}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Tipo de Edifício:</span>
-                <span className="font-black text-slate-800">
-                  {building.tipoEdificio === 'Outros' ? building.tipoEdificioOutro : building.tipoEdificio}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Tipo de Fração:</span>
-                <span className="font-black text-slate-800">{building.tipoFracao}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Construção:</span>
-                <span className="font-black text-slate-800">{building.anoConstrucao}</span>
-              </div>
+        <div className="space-y-8">
+          
+          {/* 1.1 Identificação do Edifício (De Capa) */}
+          <section>
+            <h3 className="text-xs font-black text-blue-900 uppercase border-b-2 border-blue-900 pb-1 mb-3">1.1 Identificação e Registos</h3>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-1">
+              <DataRow label="Nome do Edifício" value={building.nomeEdificio} highlight />
+              <DataRow label="Morada" value={building.morada} />
+              <DataRow label="Ano de Construção" value={building.anoConstrucao} />
+              <DataRow label="Data da Auditoria" value={formattedAuditDate} />
+              <DataRow label="Artigo Matricial" value={building.artigoMatricial} />
+              <DataRow label="Conservatória" value={building.registoConservatoria} />
+              <DataRow label="TIM III (Nº Registo)" value={building.timIII} />
+              <DataRow label="CPE Eletricidade" value={building.cpe} />
             </div>
           </section>
-          <section className="space-y-4">
-            <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Localização e Enquadramento</h3>
-            <div className="space-y-2 text-[10px]">
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Concelho:</span>
-                <span className="font-black text-slate-800">{location.concelho}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Orientação predominante:</span>
-                <span className="font-black text-slate-800">{location.orientation}</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-1">
-                <span className="text-slate-400 font-bold uppercase">Altitude:</span>
-                <span className="font-black text-slate-800">{location.altitude} m</span>
-              </div>
+
+          {/* 1.2 Dados do Proprietário e Perito (De Capa) */}
+          <section>
+            <h3 className="text-xs font-black text-blue-900 uppercase border-b-2 border-blue-900 pb-1 mb-3">1.2 Intervenientes Técnicos e Administrativos</h3>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-1">
+              <DataRow label="Proprietário / Cliente" value={building.nomeCliente} highlight />
+              <DataRow label="Morada Fiscal" value={building.clienteMorada} />
+              <DataRow label="Contacto Telefónico" value={building.telefone} />
+              <DataRow label="E-mail de Contacto" value={building.email} />
+              <DataRow label="Perito Qualificado" value={building.peritoNome} />
+              <DataRow label="Nº Perito (PQ)" value={building.peritoNumero} />
+              <DataRow label="Empresa Resp. AVAC" value={building.empresaAVAC} />
             </div>
           </section>
-        </div>
-        <div className="mt-8 border-4 border-slate-50 rounded-2xl overflow-hidden aspect-video relative">
-          {location.googleEarthImage ? (
-            <img src={location.googleEarthImage} className="w-full h-full object-cover" alt="Earth" />
-          ) : (
-            <div className="w-full h-full bg-slate-50 flex items-center justify-center text-[10px] text-slate-300 italic uppercase font-black">Implantação no Terreno (Google Earth)</div>
-          )}
+
+          {/* 1.3 Caracterização RECS (De Dados Gerais) */}
+          <section>
+            <h3 className="text-xs font-black text-blue-900 uppercase border-b-2 border-blue-900 pb-1 mb-3">1.3 Caracterização Técnica e Legal (RECS)</h3>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-1">
+              <DataRow label="Identificação Imóvel" value={building.identificacaoImovel} />
+              <DataRow label="Tipo de Edifício (RECS)" value={building.tipoEdificio === 'Outros' ? building.tipoEdificioOutro : building.tipoEdificio} highlight />
+              <DataRow label="Tipo de Fração" value={building.tipoFracao} />
+              <DataRow label="Utilização Predominante" value={building.utilizacao} />
+              <DataRow label="Inércia Térmica" value={building.inercia} />
+              <DataRow label="Motivação do SCE" value={building.motivacaoSce} />
+              <DataRow label="Regime Licenciamento" value={building.dataLicenciamento} />
+              <DataRow label="Contexto Certificado" value={building.contextoCertificado} />
+              <DataRow label="Ponto de Carregamento" value={building.pontoCarregamento} />
+              <DataRow label="Altitude (m)" value={location.altitude} />
+              <DataRow label="Concelho" value={location.concelho} />
+              <DataRow label="Coordenadas GPS" value={location.coords} />
+            </div>
+          </section>
+
+          {/* 1.4 Implantação Geográfica */}
+          <div className="mt-4 border-2 border-slate-100 rounded-2xl overflow-hidden aspect-video relative shadow-sm">
+            {location.googleEarthImage ? (
+              <img src={location.googleEarthImage} className="w-full h-full object-cover" alt="Earth" />
+            ) : (
+              <div className="w-full h-full bg-slate-50 flex items-center justify-center text-[10px] text-slate-300 italic uppercase font-black">Implantação no Terreno (Google Earth) não carregada</div>
+            )}
+            <div className="absolute top-4 left-4 bg-blue-900/80 text-white px-3 py-1 text-[8px] font-black uppercase rounded shadow-lg backdrop-blur-sm">Orientação Solar: {location.orientation}</div>
+          </div>
         </div>
       </ChapterPage>
+
+      {/* Plantas Gerais */}
+      {activeChapters.some(c => c.id === 'plantas') && (
+        <ChapterPage 
+          chapterNumber={getChapterNumber('plantas')} 
+          title="Plantas Gerais do Edifício" 
+          footerAnalysis={`Foram consultadas ${(floorPlans || []).length} plantas do edifício para apoio ao levantamento métrico e identificação de zonas térmicas.`}
+          buildingName={buildingNameShort}
+          auditDate={formattedAuditDate}
+        >
+          <div className="space-y-12">
+            {(floorPlans || []).map((plan, idx) => (
+              <div key={plan.id} className="space-y-3">
+                <div className="text-[10px] font-black text-slate-800 uppercase tracking-widest border-l-4 border-indigo-600 pl-2">
+                  Planta {idx + 1}: {plan.caption}
+                </div>
+                <div className="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden flex items-center justify-center min-h-[100mm] max-h-[150mm]">
+                  {plan.type === 'pdf' ? (
+                    <div className="text-center p-20 text-slate-400">
+                      <div className="text-indigo-600 font-black mb-2">DOCUMENTO PDF</div>
+                      <div className="text-[9px] uppercase">{plan.name}</div>
+                    </div>
+                  ) : (
+                    <img src={plan.url} className="max-w-full max-h-full object-contain" alt={plan.caption} />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChapterPage>
+      )}
 
       {/* Manutenção */}
       {activeChapters.some(c => c.id === 'manutencao') && (
@@ -360,6 +407,42 @@ const PrintView: React.FC<Props> = ({ report }) => {
                 </div>
               </div>
             </section>
+            
+            {/* Novas Evidências Fotográficas de Manutenção */}
+            {(maintenance.photoIdsPmp?.length || 0) + (maintenance.photoIdsFolhaIntervencao?.length || 0) > 0 && (
+              <section className="col-span-2 space-y-4 pt-4 border-t border-slate-100">
+                <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Evidências de Auditoria de Manutenção</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {maintenance.photoIdsPmp && maintenance.photoIdsPmp.length > 0 && (
+                    <div className="space-y-2">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Registos de PMP</span>
+                       <div className="flex flex-wrap gap-2">
+                          {photos.filter(p => maintenance.photoIdsPmp?.includes(p.id)).map(p => (
+                            <div key={p.id} className="w-20 h-20 border rounded bg-white overflow-hidden relative shadow-sm">
+                               <img src={p.url} className="w-full h-full object-contain" />
+                               <div className="absolute top-0 left-0 bg-blue-900/80 text-white text-[6px] px-1 font-black">{p.code}</div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+                  {maintenance.photoIdsFolhaIntervencao && maintenance.photoIdsFolhaIntervencao.length > 0 && (
+                    <div className="space-y-2">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Folhas de Intervenção</span>
+                       <div className="flex flex-wrap gap-2">
+                          {photos.filter(p => maintenance.photoIdsFolhaIntervencao?.includes(p.id)).map(p => (
+                            <div key={p.id} className="w-20 h-20 border rounded bg-white overflow-hidden relative shadow-sm">
+                               <img src={p.url} className="w-full h-full object-contain" />
+                               <div className="absolute top-0 left-0 bg-blue-900/80 text-white text-[6px] px-1 font-black">{p.code}</div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
             <section className="col-span-2 space-y-4">
               <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Telas Finais de Projeto (As-Built)</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -401,28 +484,76 @@ const PrintView: React.FC<Props> = ({ report }) => {
           buildingName={buildingNameShort}
           auditDate={formattedAuditDate}
         >
-          <div className="space-y-6">
-            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 grid grid-cols-2 gap-10">
-              <div>
-                <h4 className="text-[10px] font-black text-blue-900 uppercase mb-4">Fontes de Energia Primária</h4>
-                <div className="flex flex-wrap gap-2">
-                  {energy.fontes.map(f => (
-                    <span key={f} className="px-3 py-1 bg-white border border-blue-200 text-blue-700 font-black text-[9px] rounded-full uppercase">{f}</span>
-                  ))}
+          <div className="space-y-8">
+            {/* Fontes e Contadores */}
+            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+              <h4 className="text-[10px] font-black text-blue-900 uppercase mb-4">Fontes de Energia Primária e Contadores</h4>
+              <div className="grid grid-cols-1 gap-4">
+                {(energy.fontesInfo || []).map(info => (
+                  <div key={info.source} className="bg-white p-4 rounded-xl border border-blue-100 flex gap-6 items-start">
+                    <div className="shrink-0 w-24">
+                       <span className="text-[9px] font-black text-blue-700 uppercase bg-blue-50 px-2 py-1 rounded">{info.source}</span>
+                    </div>
+                    <div className="flex-1">
+                       <div className="text-[10px] font-black text-slate-800 mb-2">Contador Ref: <span className="text-blue-600">{info.meterRef || 'N/A'}</span></div>
+                       <div className="flex flex-wrap gap-2">
+                          {(info.photoIds || []).map(pid => {
+                             const photo = photos.find(p => p.id === pid);
+                             return photo ? (
+                               <div key={pid} className="w-20 h-20 border rounded bg-slate-50 overflow-hidden relative shadow-sm">
+                                  <img src={photo.url} className="w-full h-full object-contain" />
+                                  <div className="absolute top-0 left-0 bg-blue-900/80 text-white text-[6px] px-1 font-black">{photo.code}</div>
+                               </div>
+                             ) : null;
+                          })}
+                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Posto de Transformação */}
+            {energy.temPT && (
+              <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                <h4 className="text-[10px] font-black text-orange-900 uppercase mb-4">Posto de Transformação (PT)</h4>
+                <div className="grid grid-cols-3 gap-4 mb-4 text-[10px]">
+                   <div className="space-y-1"><span className="text-orange-400 font-bold uppercase">Código:</span> <div className="font-black">{energy.ptCodigo || '---'}</div></div>
+                   <div className="space-y-1"><span className="text-orange-400 font-bold uppercase">Potência:</span> <div className="font-black">{energy.ptPotencia || '---'} kVA</div></div>
+                   <div className="space-y-1"><span className="text-orange-400 font-bold uppercase">CPE:</span> <div className="font-black">{energy.cpeEletricidade || '---'}</div></div>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                   {(energy.ptPhotoIds || []).map(pid => {
+                      const photo = photos.find(p => p.id === pid);
+                      return photo ? (
+                        <div key={pid} className="w-28 h-28 border rounded-lg bg-white overflow-hidden relative shadow-md">
+                           <img src={photo.url} className="w-full h-full object-contain" />
+                           <div className="absolute top-0 left-0 bg-orange-900/80 text-white text-[6px] px-1 font-black">{photo.code}</div>
+                        </div>
+                      ) : null;
+                   })}
                 </div>
               </div>
-              <div className="text-[10px] space-y-2">
-                <h4 className="text-[10px] font-black text-blue-900 uppercase mb-4">Monitorização Existente</h4>
+            )}
+
+            {/* Monitorização */}
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black text-emerald-900 uppercase">Sistemas de Monitorização</h4>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${energy.temContadoresEnergia ? 'bg-green-500 shadow-sm' : 'bg-slate-300'}`} />
-                    <span className="font-bold text-slate-600 text-[9px]">Cont. Energia</span>
+                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                    <div className={`w-2 h-2 rounded-full ${energy.temContadoresEnergia ? 'bg-green-500' : 'bg-slate-300'}`} />
+                    <span className="font-bold text-slate-600 text-[8px] uppercase">C. Energia</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${energy.temSMM ? 'bg-green-500 shadow-sm' : 'bg-slate-300'}`} />
-                    <span className="font-bold text-slate-600 text-[9px]">SMM / Gestão</span>
+                  <div className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                    <div className={`w-2 h-2 rounded-full ${energy.temSMM ? 'bg-green-500' : 'bg-slate-300'}`} />
+                    <span className="font-bold text-slate-600 text-[8px] uppercase">SMM / Gestão</span>
                   </div>
                 </div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                 <h4 className="text-[8px] font-black text-slate-400 uppercase mb-2 italic">Notas de Monitorização</h4>
+                 <p className="text-[9px] text-slate-600 leading-tight">{energy.notasMonitorizacao || "Sem notas adicionais."}</p>
               </div>
             </div>
           </div>
@@ -522,8 +653,8 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </ChapterPage>
       )}
 
-      {/* Outros capítulos seguem a mesma lógica estrutural... */}
-      {activeChapters.filter(c => !['identificacao', 'manutencao', 'energia', 'perfis', 'envolvente', 'fotos'].includes(c.id)).map(chapter => (
+      {/* Outros capítulos */}
+      {activeChapters.filter(c => !['identificacao', 'plantas', 'manutencao', 'energia', 'perfis', 'envolvente', 'fotos'].includes(c.id)).map(chapter => (
         <ChapterPage 
           key={chapter.id}
           chapterNumber={getChapterNumber(chapter.id)} 
@@ -532,7 +663,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
           buildingName={buildingNameShort}
           auditDate={formattedAuditDate}
         >
-          {/* Mapeamento genérico para sistemas técnicos remanescentes */}
           {chapter.id === 'climatizacao' && <TechnicalTable title="Produção AVAC" list={report.sistemasList} allPhotos={photos} />}
           {chapter.id === 'aqs' && <TechnicalTable title="Produção AQS" list={report.aqsList} allPhotos={photos} />}
           {chapter.id === 'renovaveis' && <TechnicalTable title="Sistemas Renováveis" list={report.renovaveisList} allPhotos={photos} />}
@@ -548,13 +678,31 @@ const PrintView: React.FC<Props> = ({ report }) => {
           )}
           {chapter.id === 'outros' && <TechnicalTable title="Equipamentos Diversos" list={[...report.piscinaList, ...report.outrosSistemasList]} allPhotos={photos} />}
           {chapter.id === 'mures' && (
-             <div className="space-y-4">
-               {mures.filter(m => m.checked).map(m => (
-                 <div key={m.id} className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg">
-                    <div className="text-[11px] font-black text-emerald-900 uppercase mb-1">{m.label}</div>
-                    <div className="text-[10px] text-emerald-700 italic">{m.note || "Sem observações específicas."}</div>
-                 </div>
-               ))}
+             <div className="space-y-6">
+               {mures.filter(m => m.checked).map(m => {
+                 const murePhotos = photos.filter(p => m.photoIds?.includes(p.id));
+                 return (
+                   <div key={m.id} className="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-2xl shadow-sm space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-[11px] font-black text-emerald-900 uppercase mb-1 tracking-tight">{m.label}</div>
+                          <div className="text-[10px] text-emerald-700 italic leading-relaxed">{m.note || "Sem observações específicas registadas."}</div>
+                        </div>
+                      </div>
+                      
+                      {murePhotos.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-100/50">
+                          {murePhotos.map(p => (
+                            <div key={p.id} className="w-20 h-20 bg-white border border-emerald-200 rounded-lg overflow-hidden relative shadow-sm">
+                              <img src={p.url} className="w-full h-full object-contain" />
+                              <div className="absolute top-0 left-0 bg-emerald-900/80 text-white text-[6px] px-1 font-black uppercase">{p.code}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                   </div>
+                 );
+               })}
              </div>
           )}
         </ChapterPage>
@@ -571,6 +719,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
                     <img src={p.url} className="w-full h-full object-contain" alt={p.code} />
                   </div>
                   <div className="text-[8px] font-black text-blue-900 uppercase">{p.code} - {p.category}</div>
+                  <div className="text-[8px] text-slate-500 italic line-clamp-2 h-5 leading-tight">{p.caption}</div>
                 </div>
               ))}
            </div>

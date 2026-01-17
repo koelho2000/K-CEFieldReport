@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ReportState, MaintenanceData } from '../../types';
-import { Wrench, UserCheck, ShieldCheck, FileText, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { Wrench, UserCheck, ShieldCheck, FileText, CheckCircle2, Circle, AlertCircle, Plus, X } from 'lucide-react';
+import PhotoPicker from './PhotoPicker';
 
 interface Props {
   report: ReportState;
@@ -10,6 +11,7 @@ interface Props {
 
 const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
   const { maintenance } = report;
+  const [activePickerField, setActivePickerField] = useState<'pmp' | 'folha' | null>(null);
 
   const updateMaintenance = (field: keyof MaintenanceData, value: any) => {
     onUpdate({ maintenance: { ...maintenance, [field]: value } });
@@ -17,6 +19,18 @@ const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
 
   const updateTelas = (field: keyof MaintenanceData['telasFinais'], value: any) => {
     updateMaintenance('telasFinais', { ...maintenance.telasFinais, [field]: value });
+  };
+
+  const addPhotoToField = (field: 'photoIdsPmp' | 'photoIdsFolhaIntervencao', photoId: string) => {
+    const currentIds = maintenance[field] || [];
+    if (!currentIds.includes(photoId)) {
+      updateMaintenance(field, [...currentIds, photoId]);
+    }
+  };
+
+  const removePhotoFromField = (field: 'photoIdsPmp' | 'photoIdsFolhaIntervencao', photoId: string) => {
+    const currentIds = maintenance[field] || [];
+    updateMaintenance(field, currentIds.filter(id => id !== photoId));
   };
 
   const Input = ({ label, value, onChange, placeholder, icon: Icon }: any) => (
@@ -47,6 +61,38 @@ const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
     </button>
   );
 
+  const PhotoEvidenceSection = ({ field, label, photoIds }: { field: 'photoIdsPmp' | 'photoIdsFolhaIntervencao', label: string, photoIds: string[] }) => {
+    const associatedPhotos = report.photos.filter(p => photoIds.includes(p.id));
+    return (
+      <div className="space-y-3">
+        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">{label}</label>
+        <div className="flex flex-wrap gap-3">
+          {associatedPhotos.map(photo => (
+            <div key={photo.id} className="relative group/thumb">
+              <div className="w-20 h-20 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden shadow-sm">
+                <img src={photo.url} className="w-full h-full object-contain" />
+                <div className="absolute top-0 left-0 bg-slate-900/80 text-white text-[7px] px-1 font-black">{photo.code}</div>
+              </div>
+              <button 
+                onClick={() => removePhotoFromField(field, photo.id)}
+                className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/thumb:opacity-100 transition-opacity z-10 shadow-lg"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+          <button 
+            onClick={() => setActivePickerField(field === 'photoIdsPmp' ? 'pmp' : 'folha')}
+            className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-all group/add"
+          >
+            <Plus size={20} className="group-hover/add:scale-110 transition-transform" />
+            <span className="text-[8px] font-black uppercase mt-1">Associar</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <div className="bg-white border rounded-[2rem] p-8 shadow-sm space-y-12">
@@ -76,8 +122,8 @@ const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[10px] font-black text-blue-900 uppercase bg-blue-100 px-3 py-1 rounded-full">TRM - Manutenção</span>
               </div>
-              <Input label="Nome Completo do PQ" value={maintenance.trmNome} onChange={(v: string) => updateMaintenance('trmNome', v)} placeholder="Ex: Eng. João Silva" />
-              <Input label="Nº Cédula Profissional" value={maintenance.trmNumero} onChange={(v: string) => updateMaintenance('trmNumero', v)} placeholder="PQXXXXX" />
+              <Input label="Nome Completo" value={maintenance.trmNome} onChange={(v: string) => updateMaintenance('trmNome', v)} placeholder="Ex: Eng. João Silva" />
+              <Input label="Nº Cédula Profissional" value={maintenance.trmNumero} onChange={(v: string) => updateMaintenance('trmNumero', v)} />
             </div>
             <div className="p-6 bg-orange-50/20 border border-orange-100 rounded-[1.5rem] space-y-5 transition-hover hover:bg-orange-50/40">
               <div className="flex justify-between items-center mb-2">
@@ -126,13 +172,27 @@ const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
           </h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="space-y-4">
+            <div className="space-y-6">
                <div className="text-[9px] font-black text-slate-800 uppercase mb-4 tracking-tighter flex items-center gap-2">
                  <div className="w-1 h-1 bg-slate-800 rounded-full" /> Planos e Registos Ativos
                </div>
                <div className="grid grid-cols-1 gap-3">
                  <Checkbox label="Plano de Manutenção Preventiva (PMP)" checked={maintenance.temPMP} onChange={(v: boolean) => updateMaintenance('temPMP', v)} />
                  <Checkbox label="Livro de Ocorrências / Registo Local" checked={maintenance.temLivroOcorrencias} onChange={(v: boolean) => updateMaintenance('temLivroOcorrencias', v)} />
+               </div>
+               
+               {/* Novas Evidências Fotográficas */}
+               <div className="pt-6 border-t border-slate-50 space-y-6">
+                  <PhotoEvidenceSection 
+                    field="photoIdsPmp" 
+                    label="Evidências do Plano de Manutenção (PMP)" 
+                    photoIds={maintenance.photoIdsPmp || []} 
+                  />
+                  <PhotoEvidenceSection 
+                    field="photoIdsFolhaIntervencao" 
+                    label="Evidências de Folhas de Intervenção" 
+                    photoIds={maintenance.photoIdsFolhaIntervencao || []} 
+                  />
                </div>
             </div>
 
@@ -174,6 +234,14 @@ const EditorManutencao: React.FC<Props> = ({ report, onUpdate }) => {
           />
         </div>
       </div>
+
+      {activePickerField && (
+        <PhotoPicker 
+          photos={report.photos}
+          onSelect={(id) => addPhotoToField(activePickerField === 'pmp' ? 'photoIdsPmp' : 'photoIdsFolhaIntervencao', id)}
+          onClose={() => setActivePickerField(null)}
+        />
+      )}
     </div>
   );
 };

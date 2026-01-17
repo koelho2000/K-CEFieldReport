@@ -5,7 +5,7 @@ import {
   FileText, MapPin, Building, Camera, Clock, Users, 
   Box, Zap, Sun, GitBranch, Wind, Lightbulb, ArrowUpCircle, 
   Utensils, WashingMachine, Waves, Cpu, CheckCircle, Layout,
-  Save, FileUp, PlusCircle, Activity, Droplets, Wrench
+  Save, FileUp, PlusCircle, Activity, Droplets, Wrench, Map as MapIcon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
       case SectionType.MANUTENCAO: return !!(report.maintenance.empresaNome || report.maintenance.trmNome);
       case SectionType.ENERGIA: return report.energy.fontes.length;
       case SectionType.FOTOS: return report.photos.length;
+      case SectionType.PLANTAS: return report.floorPlans.length;
       case SectionType.ESPACOS: return report.espacosList.length;
       case SectionType.ENVOLVENTE: return report.envolventeList.length;
       case SectionType.SISTEMAS_CLIM: return report.sistemasList.length;
@@ -53,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
     { type: SectionType.MANUTENCAO, icon: Wrench, label: 'Manutenção' },
     { type: SectionType.ENERGIA, icon: Zap, label: 'Energia' },
     { type: SectionType.FOTOS, icon: Camera, label: 'Fotos' },
+    { type: SectionType.PLANTAS, icon: MapIcon, label: 'Plantas Gerais' },
     { type: SectionType.PERFIS, icon: Clock, label: 'Perfis Func.' },
     { type: SectionType.OCUPACAO_PERFIL, icon: Users, label: 'Perfil Ocupação' },
     { type: SectionType.ESPACOS, icon: Layout, label: 'Espaços' },
