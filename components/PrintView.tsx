@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ReportState, TechnicalElement, PhotoEntry, SpaceElement, SectionType, HourlyProfile } from '../types';
 
@@ -21,7 +20,7 @@ const ChapterPage: React.FC<{
         <div className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Capítulo {chapterNumber}</div>
         <div className="text-xl font-black text-slate-800 uppercase tracking-tight">{title}</div>
       </div>
-      <div className="text-[9px] font-bold text-slate-400 italic">K-CE Field Report v2.5</div>
+      <div className="text-[9px] font-bold text-slate-400 italic">K-SCE Field Report v2.5</div>
     </div>
 
     {/* Content */}

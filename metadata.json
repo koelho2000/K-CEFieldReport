@@ -1,5 +1,5 @@
 {
-  "name": "K-CEFieldReport",
+  "name": "K-SCEFieldReport",
   "description": "Aplicação profissional para peritos qualificados do SCE em Portugal para geração de relatórios de campo de edifícios de serviços com auxílio de IA.",
   "requestFramePermissions": [
     "camera"

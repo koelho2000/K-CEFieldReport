@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileCheck, ArrowRight, Building2, Globe, ShieldCheck } from 'lucide-react';
 
@@ -33,7 +32,7 @@ const LandingPage: React.FC<Props> = ({ onStart }) => {
             Sistema de Certificação Energética (RECS)
           </div>
           <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter leading-tight">
-            K-CE <span className="text-blue-500 italic">Field Report</span>
+            K-SCE <span className="text-blue-500 italic">Field Report</span>
           </h1>
           <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
             Plataforma profissional para levantamento de campo e geração de relatórios técnicos de auditoria energética em edifícios de serviços.

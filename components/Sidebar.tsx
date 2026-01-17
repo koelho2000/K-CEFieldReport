@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { SectionType, ReportState } from '../types';
 import { 
@@ -87,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
   return (
     <aside className="w-64 bg-slate-900 text-white h-full flex flex-col shrink-0 border-r border-slate-700 no-print">
       <div className="p-6 border-b border-slate-800">
-        <div className="font-black text-xl tracking-tight text-blue-400 italic">K-CE <span className="text-white">FR</span></div>
+        <div className="font-black text-xl tracking-tight text-blue-400 italic">K-SCE <span className="text-white">FR</span></div>
         <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">Field Report</div>
       </div>
       
@@ -137,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
       </nav>
       
       <div className="p-4 bg-slate-950 text-[9px] text-slate-500 text-center uppercase tracking-widest font-bold border-t border-slate-800">
-        K-CEFieldReport v2.5
+        K-SCEFieldReport v2.5
       </div>
     </aside>
   );
