@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>K-CEFieldReport - Relatório de Campo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @media print {
+        .no-print { display: none !important; }
+        body { margin: 0; padding: 0; background: white; }
+        .page-break { page-break-after: always; }
+        .a4-page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 10mm;
+          margin: 0 auto;
+          box-sizing: border-box;
+          position: relative;
+        }
+      }
+      .a4-page {
+        width: 210mm;
+        min-height: 297mm;
+        background: white;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        margin: 20px auto;
+        padding: 15mm;
+        box-sizing: border-box;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.36.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-50 min-h-screen">
+    <div id="root"></div>
+  </body>
+</html>
