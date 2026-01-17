@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import EditorCapa from './components/editors/EditorCapa';
 import EditorDados from './components/editors/EditorDados';
+import EditorManutencao from './components/editors/EditorManutencao';
 import EditorEnergia from './components/editors/EditorEnergia';
 import EditorLocalizacao from './components/editors/EditorLocalizacao';
 import EditorMURES from './components/editors/EditorMURES';
@@ -25,11 +26,17 @@ const INITIAL_STATE: ReportState = {
     nomeEdificio: '', morada: '', anoConstrucao: '', nomeCliente: '', clienteMorada: '',
     telefone: '', email: '', artigoMatricial: '', registoConservatoria: '', timIII: '', 
     empresaAVAC: '', cpe: '', pt1_kva: '', pt2_kva: '', identificacaoImovel: '', 
-    tipoFracao: '', utilizacao: '', inercia: '', pontoCarregamento: '', motivacaoSce: '', 
-    dataLicenciamento: '', contextoCertificado: '', peritoNome: 'José Pedro Lopes Coelho',
-    peritoNumero: 'PQ00851'
+    tipoFracao: '', utilizacao: '', tipoEdificio: '', tipoEdificioOutro: '', inercia: '', 
+    pontoCarregamento: '', motivacaoSce: '', dataLicenciamento: '', contextoCertificado: '', 
+    peritoNome: 'José Pedro Lopes Coelho', peritoNumero: 'PQ00851'
   },
   location: { coords: '', altitude: '', concelho: '', orientation: 'Norte' },
+  maintenance: {
+    trmNome: '', trmNumero: '', tgeNome: '', tgeNumero: '', empresaNome: '', empresaAlvara: '',
+    temPMP: false, temLivroOcorrencias: false,
+    telasFinais: { arquitetura: false, avac: false, eletricidade: false, aguasEsgotos: false, outros: false, outrosSpec: '' },
+    periodicidade: 'Mensal', notasManutencao: ''
+  },
   energy: {
     fontes: [],
     temPT: false,
@@ -99,7 +106,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Funções de Exportação
   const exportHTML = () => {
     if (!printRef.current) return;
     const styles = Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
@@ -159,6 +165,7 @@ const App: React.FC = () => {
       case SectionType.CAPA: return <EditorCapa report={report} onUpdate={updateReport} />;
       case SectionType.LOCALIZACAO: return <EditorLocalizacao report={report} onUpdate={updateReport} />;
       case SectionType.DADOS_EDIFICIO: return <EditorDados report={report} onUpdate={updateReport} />;
+      case SectionType.MANUTENCAO: return <EditorManutencao report={report} onUpdate={updateReport} />;
       case SectionType.ENERGIA: return <EditorEnergia report={report} onUpdate={updateReport} />;
       case SectionType.FOTOS: return <EditorFotos report={report} onUpdate={updateReport} />;
       case SectionType.PERFIS: return (

@@ -5,7 +5,7 @@ import {
   FileText, MapPin, Building, Camera, Clock, Users, 
   Box, Zap, Sun, GitBranch, Wind, Lightbulb, ArrowUpCircle, 
   Utensils, WashingMachine, Waves, Cpu, CheckCircle, Layout,
-  Save, FileUp, PlusCircle, Activity, Droplets
+  Save, FileUp, PlusCircle, Activity, Droplets, Wrench
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
       case SectionType.CAPA: return !!report.coverImage;
       case SectionType.LOCALIZACAO: return !!(report.location.coords || report.location.concelho);
       case SectionType.DADOS_EDIFICIO: return !!report.building.nomeEdificio;
+      case SectionType.MANUTENCAO: return !!(report.maintenance.empresaNome || report.maintenance.trmNome);
       case SectionType.ENERGIA: return report.energy.fontes.length;
       case SectionType.FOTOS: return report.photos.length;
       case SectionType.ESPACOS: return report.espacosList.length;
@@ -49,6 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
     { type: SectionType.CAPA, icon: FileText, label: 'Capa' },
     { type: SectionType.LOCALIZACAO, icon: MapPin, label: 'Localização' },
     { type: SectionType.DADOS_EDIFICIO, icon: Building, label: 'Dados Gerais' },
+    { type: SectionType.MANUTENCAO, icon: Wrench, label: 'Manutenção' },
     { type: SectionType.ENERGIA, icon: Zap, label: 'Energia' },
     { type: SectionType.FOTOS, icon: Camera, label: 'Fotos' },
     { type: SectionType.PERFIS, icon: Clock, label: 'Perfis Func.' },

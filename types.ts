@@ -4,6 +4,7 @@ export enum SectionType {
   FOTOS = 'Fotos',
   LOCALIZACAO = 'Localização',
   DADOS_EDIFICIO = 'Dados do Edifício',
+  MANUTENCAO = 'Manutenção e Operação',
   ENERGIA = 'Energia e Monitorização',
   PERFIS = 'Perfis de Funcionamento',
   OCUPACAO_PERFIL = 'Perfil de Ocupação',
@@ -89,6 +90,27 @@ export interface EnergyInfrastructure {
   notasMonitorizacao: string;
 }
 
+export interface MaintenanceData {
+  trmNome: string;
+  trmNumero: string;
+  tgeNome: string;
+  tgeNumero: string;
+  empresaNome: string;
+  empresaAlvara: string;
+  temPMP: boolean;
+  temLivroOcorrencias: boolean;
+  telasFinais: {
+    arquitetura: boolean;
+    avac: boolean;
+    eletricidade: boolean;
+    aguasEsgotos: boolean;
+    outros: boolean;
+    outrosSpec: string;
+  };
+  periodicidade: string;
+  notasManutencao: string;
+}
+
 export interface ReportState {
   auditDate: string;
   coverImage?: string;
@@ -110,6 +132,8 @@ export interface ReportState {
     identificacaoImovel: string;
     tipoFracao: string;
     utilizacao: string;
+    tipoEdificio: string;
+    tipoEdificioOutro?: string;
     inercia: string;
     pontoCarregamento: string;
     motivacaoSce: string;
@@ -122,6 +146,7 @@ export interface ReportState {
     coords: string; altitude: string; concelho: string;
     orientation: string; googleEarthImage?: string;
   };
+  maintenance: MaintenanceData;
   energy: EnergyInfrastructure;
   profiles: {
     geral: HourlyProfile;

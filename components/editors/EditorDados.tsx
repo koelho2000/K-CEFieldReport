@@ -52,6 +52,16 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
     identificacaoImovel: ["Edifício", "Fração (s/ PH e com utilização independente)", "Fração autónoma (com PH constituída)"],
     tipoFracao: ["Privado", "Administração local", "Administração central"],
     utilizacao: ["Serviços", "Misto"],
+    tipoEdificio: [
+      "Escritórios",
+      "Ensino",
+      "Saúde",
+      "Hotéis e Restaurantes",
+      "Comércio",
+      "Desporto e Lazer",
+      "Cultura (Museus, Bibliotecas, etc.)",
+      "Outros"
+    ],
     inercia: ["Forte", "Média", "Fraca"],
     pontoCarregamento: ["Partilhado", "Privado", "Não Aplicável"],
     motivacaoSce: ["Compra e venda, doação ou similares", "Locação", "Construção nova", "Reabilitação / Intervenção", "Avaliação Energética Periódica", "Acesso a Benefícios Fiscais", "Acesso a Instrumentos Financeiros", "Reemissão decorrente de verificação de qualidade", "Voluntário"],
@@ -73,20 +83,32 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
 
   useEffect(() => {
     const { 
-      building, location, energy, profiles, espacosList, 
+      building, location, maintenance, energy, profiles, espacosList, 
       envolventeList, sistemasList, aqsList, renovaveisList, 
-      distribuicaoList, difusaoList, iluminacaoList, elevadoresList, 
-      cozinhasList, lavandariaList, piscinaList, outrosSistemasList, mures 
+      distribuicaoList, difusaoList, iluminacaoList, mures 
     } = report;
     
     // 1. Identificação Geral
     let autoDesc = `RELATÓRIO DE CAMPO - AUDITORIA TÉCNICA (RECS)\n\n`;
     autoDesc += `O imóvel "${building.nomeEdificio || '---'}", situado em ${location.concelho || '[Concelho]'} (Altitude: ${location.altitude || '---'}m), `;
     autoDesc += `com orientação solar predominante a ${location.orientation}, apresenta-se como uma ${building.identificacaoImovel || '[Tipologia]'} `;
-    autoDesc += `de cariz ${building.tipoFracao || '[Fração]'} vocacionada para ${building.utilizacao || '[Serviços]'}. `;
+    
+    const tipoEdificioStr = building.tipoEdificio === 'Outros' 
+      ? `classificado como ${building.tipoEdificioOutro || 'Outro'}` 
+      : `destinado a ${building.tipoEdificio || '[Tipo RECS]'}`;
+      
+    autoDesc += `do setor de ${tipoEdificioStr} de cariz ${building.tipoFracao || '[Fração]'} vocacionada para ${building.utilizacao || '[Serviços]'}. `;
     autoDesc += `O edifício foi construído no período ${building.anoConstrucao || '[AnoConstrução]'}, sendo caracterizado por uma inércia térmica ${building.inercia || '[Inércia]'}.\n\n`;
 
-    // 2. Infraestrutura Energética
+    // 2. Operação e Manutenção
+    if (maintenance.empresaNome || maintenance.trmNome) {
+      autoDesc += `OPERAÇÃO E MANUTENÇÃO:\n`;
+      autoDesc += `O edifício é assistido pela empresa ${maintenance.empresaNome || '[Empresa]'} com periodicidade ${maintenance.periodicidade.toLowerCase()}. `;
+      autoDesc += `A responsabilidade técnica de manutenção está a cargo de ${maintenance.trmNome || '---'} (TRM) e a gestão de energia a cargo de ${maintenance.tgeNome || '---'} (TGE). `;
+      autoDesc += `Ao nível documental, o imóvel ${maintenance.temPMP ? 'possui' : 'carece de'} Plano de Manutenção Preventiva e ${maintenance.temLivroOcorrencias ? 'dispõe' : 'não dispõe'} de Livro de Ocorrências atualizado.\n\n`;
+    }
+
+    // 3. Infraestrutura Energética
     if (energy.fontes.length > 0) {
       autoDesc += `INFRAESTRUTURA ENERGÉTICA:\n`;
       autoDesc += `As fontes de energia primária identificadas incluem: ${energy.fontes.join(', ')}. `;
@@ -97,7 +119,7 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
       autoDesc += `contando com contadores de ${energy.temContadoresEnergia ? 'energia' : ''}${energy.temContadoresEnergia && energy.temContadoresAgua ? ' e ' : ''}${energy.temContadoresAgua ? 'água' : ''}.\n\n`;
     }
 
-    // 3. Perfis e Ocupação
+    // 4. Perfis e Ocupação
     const annualFactor = (profiles.ocupacao.daily.reduce((a, b) => a + b, 0) / 24) * 
                          (profiles.ocupacao.weekly.reduce((a, b) => a + b, 0) / 7) * 
                          (profiles.ocupacao.monthly.reduce((a, b) => a + b, 0) / 12) * 100;
@@ -106,7 +128,7 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
     autoDesc += `com perfis de funcionamento ${profiles.sistemas.allSame ? 'centralizados' : 'independentes por sistemas'}. `;
     autoDesc += `A compartimentação interna compreende ${espacosList.length} espaços funcionais principais.\n\n`;
 
-    // 4. Envolvente
+    // 5. Envolvente
     if (envolventeList.length > 0) {
       const opacos = envolventeList.filter(e => e.type !== 'Envidraçado').map(e => e.type).filter((v, i, a) => a.indexOf(v) === i);
       const envidracados = envolventeList.filter(e => e.type === 'Envidraçado');
@@ -114,12 +136,12 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
       if (opacos.length > 0) autoDesc += `A envolvente opaca utiliza soluções de ${opacos.join(', ')}. `;
       if (envidracados.length > 0) {
         autoDesc += `Os vãos envidraçados consistem maioritariamente em sistemas de caixilharia de ${envidracados[0].caixilhariaTipo} `;
-        autoDesc += `com vidro ${envidracados[0].vidroTipo.toLowerCase()}${envidracados[0].corteTermico === 'Com' ? ' e corte térmico' : ''}. `;
+        autoDesc += `com vidro ${envidracados[0].vidroTipo?.toLowerCase()}${envidracados[0].corteTermico === 'Com' ? ' e corte térmico' : ''}. `;
       }
       autoDesc += `O estado geral de conservação da envolvente é avaliado como "${envolventeList[0]?.estado || '---'}".\n\n`;
     }
 
-    // 5. Sistemas Técnicos (Produção)
+    // 6. Sistemas Técnicos (Produção)
     const allSist = [...sistemasList, ...aqsList, ...renovaveisList];
     if (allSist.length > 0) {
       autoDesc += `SISTEMAS DE PRODUÇÃO TÉRMICA E AQS:\n`;
@@ -139,7 +161,7 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
       autoDesc += `\n\n`;
     }
 
-    // 6. Distribuição, Difusão e Iluminação
+    // 7. Distribuição, Difusão e Iluminação
     if (distribuicaoList.length > 0 || difusaoList.length > 0 || iluminacaoList.length > 0) {
       autoDesc += `DISTRIBUIÇÃO, DIFUSÃO E ILUMINAÇÃO:\n`;
       if (distribuicaoList.length > 0) autoDesc += `A rede de distribuição térmica compreende ${distribuicaoList.map(d => d.type).join(', ')}. `;
@@ -151,7 +173,7 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
       autoDesc += `\n\n`;
     }
 
-    // 7. MURES
+    // 8. MURES
     const muresAtivas = mures.filter(m => m.checked);
     if (muresAtivas.length > 0) {
       autoDesc += `OPORTUNIDADES DE MELHORIA (MURES):\n`;
@@ -162,12 +184,11 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
     autoDesc += `O edifício enquadra-se no regime ${building.dataLicenciamento || '[Licenciamento]'} para um contexto de certificado ${building.contextoCertificado || '[Contexto]'}. `;
     autoDesc += `A auditoria foi concluída a ${new Date(report.auditDate).toLocaleDateString('pt-PT')} pelo PQ ${building.peritoNome} (${building.peritoNumero}).`;
 
-    // Apenas atualiza se o campo estiver vazio ou for a descrição por defeito curta
     if (!report.descricaoTecnica || report.descricaoTecnica.length < 500) {
        onUpdate({ descricaoTecnica: autoDesc });
     }
   }, [
-    report.building, report.location, report.energy, report.profiles, 
+    report.building, report.location, report.maintenance, report.energy, report.profiles, 
     report.espacosList, report.envolventeList, report.sistemasList, 
     report.aqsList, report.renovaveisList, report.distribuicaoList, 
     report.difusaoList, report.iluminacaoList, report.mures
@@ -182,6 +203,19 @@ const EditorDados: React.FC<Props> = ({ report, onUpdate }) => {
 
         <Section title="Identificação Geral" icon={ClipboardList}>
           <Select label="Identificação do Imóvel" field="identificacaoImovel" value={report.building.identificacaoImovel} optionsArr={options.identificacaoImovel} onChange={handleChange} />
+          <Select label="Tipo de Edifício (RECS)" field="tipoEdificio" value={report.building.tipoEdificio} optionsArr={options.tipoEdificio} onChange={handleChange} />
+          {report.building.tipoEdificio === 'Outros' && (
+            <div className="col-span-full animate-in slide-in-from-left-2">
+              <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Especifique o Tipo de Edifício</label>
+              <input 
+                type="text"
+                value={report.building.tipoEdificioOutro || ''}
+                onChange={(e) => handleChange('tipoEdificioOutro', e.target.value)}
+                placeholder="Ex: Armazém Logístico, Indústria com Escritórios..."
+                className="w-full p-2.5 bg-white border border-blue-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-100 transition"
+              />
+            </div>
+          )}
           <Select label="Tipo de Fração" field="tipoFracao" value={report.building.tipoFracao} optionsArr={options.tipoFracao} onChange={handleChange} />
           <Select label="Utilização" field="utilizacao" value={report.building.utilizacao} optionsArr={options.utilizacao} onChange={handleChange} />
           <Select label="Inércia Térmica" field="inercia" value={report.building.inercia} optionsArr={options.inercia} onChange={handleChange} />
