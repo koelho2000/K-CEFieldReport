@@ -65,6 +65,7 @@ export interface SpaceElement {
   id: string;
   name: string;
   type: string;
+  customType?: string;
   category: 'Edifício' | 'Complementar';
   photoIds?: string[];
 }

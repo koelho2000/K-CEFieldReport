@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ReportState, TechnicalElement, PhotoEntry, SpaceElement, SectionType, HourlyProfile } from '../types';
 
@@ -157,11 +158,12 @@ const TechnicalTable: React.FC<{
 );
 
 const PrintView: React.FC<Props> = ({ report }) => {
-  const { building, location, maintenance, energy, profiles, photos, floorPlans, mures } = report;
+  const { building, location, maintenance, energy, profiles, photos, floorPlans, mures, espacosList } = report;
 
   const activeChapters = [
     { id: 'identificacao', title: "Identificação e Enquadramento Legal", active: true },
     { id: 'plantas', title: "Plantas Gerais do Edifício", active: (floorPlans || []).length > 0 },
+    { id: 'espacos', title: "Compartimentação e Espaços do Edifício", active: (espacosList || []).length > 0 },
     { id: 'manutencao', title: "Manutenção e Operação do Edifício", active: maintenance.empresaNome || maintenance.trmNome },
     { id: 'energia', title: "Infraestrutura de Energia e Monitorização", active: energy.fontes.length > 0 || energy.temPT },
     { id: 'perfis', title: "Perfis de Funcionamento e Ocupação", active: true },
@@ -362,7 +364,104 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </ChapterPage>
       )}
 
-      {/* Manutenção */}
+      {/* Outros capítulos automáticos baseados na lista filtrada */}
+      {activeChapters.filter(c => !['identificacao', 'plantas', 'manutencao', 'energia', 'perfis', 'envolvente', 'fotos'].includes(c.id)).map(chapter => (
+        <ChapterPage 
+          key={chapter.id}
+          chapterNumber={getChapterNumber(chapter.id)} 
+          title={chapter.title} 
+          footerAnalysis={`Auditados os elementos do sistema ${chapter.title}. Verificada a conformidade técnica em campo.`}
+          buildingName={buildingNameShort}
+          auditDate={formattedAuditDate}
+        >
+          {/* Novo Capítulo: Espaços do Edifício */}
+          {chapter.id === 'espacos' && (
+             <div className="space-y-6">
+               <h3 className="text-[9px] font-black bg-slate-100 text-slate-600 p-1 px-2 mb-4 uppercase tracking-widest border-l-4 border-blue-900">Listagem de Compartimentos Auditados</h3>
+               <table className="w-full text-[9px] border-collapse">
+                 <thead className="bg-slate-50 font-black uppercase text-[8px] text-slate-500">
+                   <tr>
+                     <th className="border p-2 text-left w-24">Categoria</th>
+                     <th className="border p-2 text-left w-32">Tipo de Espaço</th>
+                     <th className="border p-2 text-left">Designação / Nome</th>
+                     <th className="border p-2 text-left w-48">Evidências Fotográficas</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {espacosList.map(s => {
+                     const spacePhotos = photos.filter(p => s.photoIds?.includes(p.id));
+                     return (
+                       <tr key={s.id}>
+                         <td className="border p-2 text-slate-400 font-bold uppercase text-[8px]">{s.category}</td>
+                         <td className="border p-2 font-black text-blue-900 uppercase">
+                           {s.type === 'Outro' ? (s.customType || 'Espaço Customizado') : s.type}
+                         </td>
+                         <td className="border p-2 font-bold text-slate-700">{s.name || '---'}</td>
+                         <td className="border p-2">
+                           <div className="flex flex-wrap gap-1">
+                             {spacePhotos.map(p => (
+                               <div key={p.id} className="w-10 h-10 border rounded bg-white overflow-hidden relative shadow-sm">
+                                 <img src={p.url} className="w-full h-full object-contain" />
+                                 <div className="absolute top-0 left-0 bg-black/60 text-white text-[5px] px-0.5 font-bold">{p.code}</div>
+                               </div>
+                             ))}
+                             {spacePhotos.length === 0 && <span className="text-[7px] text-slate-300 italic">Sem fotos associadas</span>}
+                           </div>
+                         </td>
+                       </tr>
+                     );
+                   })}
+                 </tbody>
+               </table>
+             </div>
+          )}
+
+          {chapter.id === 'climatizacao' && <TechnicalTable title="Produção AVAC" list={report.sistemasList} allPhotos={photos} />}
+          {chapter.id === 'aqs' && <TechnicalTable title="Produção AQS" list={report.aqsList} allPhotos={photos} />}
+          {chapter.id === 'renovaveis' && <TechnicalTable title="Sistemas Renováveis" list={report.renovaveisList} allPhotos={photos} />}
+          {chapter.id === 'distribuicao' && <TechnicalTable title="Bombas e Redes" list={report.distribuicaoList} allPhotos={photos} />}
+          {chapter.id === 'difusao' && <TechnicalTable title="Ventilação e Difusão" list={report.difusaoList} allPhotos={photos} />}
+          {chapter.id === 'iluminacao' && <TechnicalTable title="Luminárias e Gestão" list={report.iluminacaoList} allPhotos={photos} />}
+          {chapter.id === 'elevacao' && <TechnicalTable title="Sistemas de Elevação" list={report.elevadoresList} allPhotos={photos} />}
+          {chapter.id === 'cozinhas' && (
+            <>
+              <TechnicalTable title="Equipamentos Cozinha" list={report.cozinhasList} allPhotos={photos} />
+              <TechnicalTable title="Equipamentos Lavandaria" list={report.lavandariaList} allPhotos={photos} />
+            </>
+          )}
+          {chapter.id === 'outros' && <TechnicalTable title="Equipamentos Diversos" list={[...report.piscinaList, ...report.outrosSistemasList]} allPhotos={photos} />}
+          {chapter.id === 'mures' && (
+             <div className="space-y-6">
+               {mures.filter(m => m.checked).map(m => {
+                 const murePhotos = photos.filter(p => m.photoIds?.includes(p.id));
+                 return (
+                   <div key={m.id} className="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-2xl shadow-sm space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-[11px] font-black text-emerald-900 uppercase mb-1 tracking-tight">{m.label}</div>
+                          <div className="text-[10px] text-emerald-700 italic leading-relaxed">{m.note || "Sem observações específicas registadas."}</div>
+                        </div>
+                      </div>
+                      
+                      {murePhotos.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-100/50">
+                          {murePhotos.map(p => (
+                            <div key={p.id} className="w-20 h-20 bg-white border border-emerald-200 rounded-lg overflow-hidden relative shadow-sm">
+                              <img src={p.url} className="w-full h-full object-contain" />
+                              <div className="absolute top-0 left-0 bg-emerald-900/80 text-white text-[6px] px-1 font-black uppercase">{p.code}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                   </div>
+                 );
+               })}
+             </div>
+          )}
+        </ChapterPage>
+      ))}
+
+      {/* Manutenção (Manual por layout específico) */}
       {activeChapters.some(c => c.id === 'manutencao') && (
         <ChapterPage 
           chapterNumber={getChapterNumber('manutencao')} 
@@ -375,15 +474,15 @@ const PrintView: React.FC<Props> = ({ report }) => {
             <section className="space-y-4">
               <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Responsáveis Técnicos</h3>
               <div className="space-y-2 text-[10px]">
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">TRM:</span>
                   <span className="font-black text-slate-800">{maintenance.trmNome || '---'} ({maintenance.trmNumero || '---'})</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">TGE:</span>
                   <span className="font-black text-slate-800">{maintenance.tgeNome || '---'} ({maintenance.tgeNumero || '---'})</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">Empresa:</span>
                   <span className="font-black text-slate-800">{maintenance.empresaNome || '---'} (Alv. {maintenance.empresaAlvara || '---'})</span>
                 </div>
@@ -392,22 +491,21 @@ const PrintView: React.FC<Props> = ({ report }) => {
             <section className="space-y-4">
               <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Planos e Auditoria</h3>
               <div className="space-y-2 text-[10px]">
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">Plano Manut. (PMP):</span>
                   <span className={`font-black ${maintenance.temPMP ? 'text-emerald-600' : 'text-red-500'}`}>{maintenance.temPMP ? 'SIM (CONSULTADO)' : 'NÃO DISPONÍVEL'}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">Livro Ocorrências:</span>
                   <span className={`font-black ${maintenance.temLivroOcorrencias ? 'text-emerald-600' : 'text-red-500'}`}>{maintenance.temLivroOcorrencias ? 'SIM (ATUALIZADO)' : 'NÃO IDENTIFICADO'}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-50 pb-1">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="text-slate-400 font-bold uppercase">Periodicidade:</span>
                   <span className="font-black text-slate-800 uppercase">{maintenance.periodicidade}</span>
                 </div>
               </div>
             </section>
             
-            {/* Novas Evidências Fotográficas de Manutenção */}
             {(maintenance.photoIdsPmp?.length || 0) + (maintenance.photoIdsFolhaIntervencao?.length || 0) > 0 && (
               <section className="col-span-2 space-y-4 pt-4 border-t border-slate-100">
                 <h3 className="text-xs font-black text-blue-900 uppercase border-b pb-1">Evidências de Auditoria de Manutenção</h3>
@@ -474,7 +572,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </ChapterPage>
       )}
 
-      {/* Energia */}
+      {/* Energia (Layout manual) */}
       {activeChapters.some(c => c.id === 'energia') && (
         <ChapterPage 
           chapterNumber={getChapterNumber('energia')} 
@@ -484,7 +582,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
           auditDate={formattedAuditDate}
         >
           <div className="space-y-8">
-            {/* Fontes e Contadores */}
             <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
               <h4 className="text-[10px] font-black text-blue-900 uppercase mb-4">Fontes de Energia Primária e Contadores</h4>
               <div className="grid grid-cols-1 gap-4">
@@ -512,7 +609,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
               </div>
             </div>
 
-            {/* Posto de Transformação */}
             {energy.temPT && (
               <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100">
                 <h4 className="text-[10px] font-black text-orange-900 uppercase mb-4">Posto de Transformação (PT)</h4>
@@ -535,7 +631,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
               </div>
             )}
 
-            {/* Monitorização */}
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <h4 className="text-[10px] font-black text-emerald-900 uppercase">Sistemas de Monitorização</h4>
@@ -559,7 +654,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </ChapterPage>
       )}
 
-      {/* Perfis */}
+      {/* Perfis (Layout manual) */}
       <ChapterPage 
         chapterNumber={getChapterNumber('perfis')} 
         title="Perfis de Funcionamento e Ocupação" 
@@ -576,7 +671,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
             <div className="text-4xl font-black">{annualFactor.toFixed(1)}%</div>
           </div>
 
-          {/* 1. Perfil Geral */}
           <section className="space-y-2">
             <MiniProfileChart profile={profiles.geral} label="Perfil de Funcionamento Geral (24h)" color="bg-blue-600" />
             <ProfileAnalysisBlock 
@@ -588,7 +682,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
             />
           </section>
           
-          {/* 2. Perfis por Sistema */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <MiniProfileChart profile={profiles.sistemas.avac} label="Perfil AVAC" color="bg-orange-500" />
@@ -612,7 +705,6 @@ const PrintView: React.FC<Props> = ({ report }) => {
             </div>
           </div>
 
-          {/* 3. Perfil de Ocupação Mensal */}
           <section className="space-y-2">
             <div className="bg-white border p-3 rounded-xl shadow-sm">
               <div className="flex justify-between items-center mb-4">
@@ -639,7 +731,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </div>
       </ChapterPage>
 
-      {/* Envolvente */}
+      {/* Envolvente (Manual) */}
       {activeChapters.some(c => c.id === 'envolvente') && (
         <ChapterPage 
           chapterNumber={getChapterNumber('envolvente')} 
@@ -652,62 +744,7 @@ const PrintView: React.FC<Props> = ({ report }) => {
         </ChapterPage>
       )}
 
-      {/* Outros capítulos */}
-      {activeChapters.filter(c => !['identificacao', 'plantas', 'manutencao', 'energia', 'perfis', 'envolvente', 'fotos'].includes(c.id)).map(chapter => (
-        <ChapterPage 
-          key={chapter.id}
-          chapterNumber={getChapterNumber(chapter.id)} 
-          title={chapter.title} 
-          footerAnalysis={`Auditados os elementos do sistema ${chapter.title}. Verificada a conformidade técnica em campo.`}
-          buildingName={buildingNameShort}
-          auditDate={formattedAuditDate}
-        >
-          {chapter.id === 'climatizacao' && <TechnicalTable title="Produção AVAC" list={report.sistemasList} allPhotos={photos} />}
-          {chapter.id === 'aqs' && <TechnicalTable title="Produção AQS" list={report.aqsList} allPhotos={photos} />}
-          {chapter.id === 'renovaveis' && <TechnicalTable title="Sistemas Renováveis" list={report.renovaveisList} allPhotos={photos} />}
-          {chapter.id === 'distribuicao' && <TechnicalTable title="Bombas e Redes" list={report.distribuicaoList} allPhotos={photos} />}
-          {chapter.id === 'difusao' && <TechnicalTable title="Ventilação e Difusão" list={report.difusaoList} allPhotos={photos} />}
-          {chapter.id === 'iluminacao' && <TechnicalTable title="Luminárias e Gestão" list={report.iluminacaoList} allPhotos={photos} />}
-          {chapter.id === 'elevacao' && <TechnicalTable title="Sistemas de Elevação" list={report.elevadoresList} allPhotos={photos} />}
-          {chapter.id === 'cozinhas' && (
-            <>
-              <TechnicalTable title="Equipamentos Cozinha" list={report.cozinhasList} allPhotos={photos} />
-              <TechnicalTable title="Equipamentos Lavandaria" list={report.lavandariaList} allPhotos={photos} />
-            </>
-          )}
-          {chapter.id === 'outros' && <TechnicalTable title="Equipamentos Diversos" list={[...report.piscinaList, ...report.outrosSistemasList]} allPhotos={photos} />}
-          {chapter.id === 'mures' && (
-             <div className="space-y-6">
-               {mures.filter(m => m.checked).map(m => {
-                 const murePhotos = photos.filter(p => m.photoIds?.includes(p.id));
-                 return (
-                   <div key={m.id} className="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-2xl shadow-sm space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-[11px] font-black text-emerald-900 uppercase mb-1 tracking-tight">{m.label}</div>
-                          <div className="text-[10px] text-emerald-700 italic leading-relaxed">{m.note || "Sem observações específicas registadas."}</div>
-                        </div>
-                      </div>
-                      
-                      {murePhotos.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-100/50">
-                          {murePhotos.map(p => (
-                            <div key={p.id} className="w-20 h-20 bg-white border border-emerald-200 rounded-lg overflow-hidden relative shadow-sm">
-                              <img src={p.url} className="w-full h-full object-contain" />
-                              <div className="absolute top-0 left-0 bg-emerald-900/80 text-white text-[6px] px-1 font-black uppercase">{p.code}</div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                   </div>
-                 );
-               })}
-             </div>
-          )}
-        </ChapterPage>
-      ))}
-
-      {/* Anexo Fotográfico */}
+      {/* Anexo Fotográfico (Manual) */}
       {activeChapters.some(c => c.id === 'fotos') && (
         <div className="a4-page page-break bg-white p-[15mm] flex flex-col">
            <h2 className="text-2xl font-black text-blue-900 uppercase border-b-2 border-blue-900 pb-2 mb-6">Anexo I - Galeria Fotográfica de Campo</h2>
