@@ -6,7 +6,8 @@ import { Sparkles, Building2, ShieldCheck, ClipboardList } from 'lucide-react';
 interface SectionProps {
   title: string;
   icon: any;
-  children: React.ReactNode;
+  // Make children optional to avoid TS issues with JSX children detection
+  children?: React.ReactNode;
 }
 
 const Section = ({ title, icon: Icon, children }: SectionProps) => (

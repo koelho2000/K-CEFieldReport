@@ -77,6 +77,7 @@ const INITIAL_STATE: ReportState = {
 const App: React.FC = () => {
   const [report, setReport] = useState<ReportState>(INITIAL_STATE);
   const [viewMode, setViewMode] = useState<'welcome' | 'edit' | 'preview'>('welcome');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const printRef = useRef<HTMLDivElement>(null);
 
   const updateReport = useCallback((updates: Partial<ReportState>) => setReport(prev => ({ ...prev, ...updates })), []);
@@ -104,7 +105,6 @@ const App: React.FC = () => {
       const parsed = JSON.parse(data);
       if (parsed.building && parsed.profiles) {
         setReport(parsed);
-        // Se abrir um arquivo, vai direto para edição
         setViewMode('edit');
       } else {
         alert('O ficheiro selecionado não parece ser um relatório válido do SCE PRO.');
@@ -167,6 +167,8 @@ const App: React.FC = () => {
       alert("Não foi possível copiar automaticamente. Selecione e copie manualmente.");
     }
   };
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
   const renderEditor = () => {
     switch (report.currentSection) {
@@ -251,7 +253,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className={`flex h-screen overflow-hidden ${theme === 'dark' ? 'dark' : ''}`}>
       <Sidebar 
         currentSection={report.currentSection} 
         onSelect={(s) => updateReport({ currentSection: s })} 
@@ -260,8 +262,13 @@ const App: React.FC = () => {
         onOpen={handleOpen}
         report={report}
       />
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
-        <Header title={report.currentSection} onPreview={() => setViewMode('preview')} />
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors">
+        <Header 
+          title={report.currentSection} 
+          onPreview={() => setViewMode('preview')} 
+          theme={theme}
+          onThemeToggle={toggleTheme}
+        />
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
           <div className="max-w-6xl mx-auto">{renderEditor()}</div>
         </div>

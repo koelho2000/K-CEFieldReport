@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { SectionType, ReportState } from '../types';
 import { 
@@ -84,13 +85,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white h-full flex flex-col shrink-0 border-r border-slate-700 no-print">
-      <div className="p-6 border-b border-slate-800">
+    <aside className="w-64 bg-slate-900 dark:bg-black text-white h-full flex flex-col shrink-0 border-r border-slate-700 dark:border-slate-900 no-print transition-colors">
+      <div className="p-6 border-b border-slate-800 dark:border-slate-900">
         <div className="font-black text-xl tracking-tight text-blue-400 italic">K-SCE <span className="text-white">FR</span></div>
         <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest font-bold">Field Report</div>
       </div>
       
-      <div className="p-3 grid grid-cols-3 gap-1 border-b border-slate-800 bg-slate-950/50">
+      <div className="p-3 grid grid-cols-3 gap-1 border-b border-slate-800 dark:border-slate-900 bg-slate-950/50">
         <button onClick={onNew} title="Novo Relatório" className="flex flex-col items-center gap-1 py-2 rounded hover:bg-slate-800 transition group">
           <PlusCircle size={16} className="text-emerald-400 group-hover:scale-110 transition-transform" />
           <span className="text-[8px] font-black uppercase tracking-tighter">Novo</span>
@@ -135,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentSection, onSelect, onNew, onSa
         })}
       </nav>
       
-      <div className="p-4 bg-slate-950 text-[9px] text-slate-500 text-center uppercase tracking-widest font-bold border-t border-slate-800">
+      <div className="p-4 bg-slate-950 text-[9px] text-slate-500 text-center uppercase tracking-widest font-bold border-t border-slate-800 dark:border-slate-900">
         K-SCEFieldReport v2.5
       </div>
     </aside>
